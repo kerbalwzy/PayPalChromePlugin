@@ -72,7 +72,7 @@ function active() {
     }
 }
 
-active()
+// active()
 
 function deactivate() {
     console.log('deactivate and clear interval')
@@ -368,22 +368,17 @@ const payResImgSelector1 = '#react-transfer-container > div > div > div'
 
 async function step10() {
     let params = {}
-    waitEleDom(payResImgSelector1).then(async function(eleDom) {
-        // 处理Dom中的SVG元素
-        let node = $('#success-checkmark-animated > svg')
-        let parentNode = node.parentNode
-        let svg = node.outerHTML.trim()
-        let canvas = document.createElement('canvas')
-        canvg(canvas, svg)
-        if (node.style.position) {
-            canvas.style.position += node.style.position
-            canvas.style.left += node.style.left
-            canvas.style.top += node.style.top
-        }
-        parentNode.removeChild(node)
-        parentNode.appendChild(canvas)
+    waitEleDom(payResImgSelector).then(async function(eleDom) {
+        // 处理Dom中的SVG元素, 重置宽高
+        var svgElements = document.body.querySelectorAll('svg');
+        svgElements.forEach(function(item) {
+            item.setAttribute("width", item.getBoundingClientRect().width);
+            item.style.width = null;
+            item.setAttribute("height", item.getBoundingClientRect().height);
+            item.style.height = null;
+        });
         // 重新获取元素, 并转换为图片
-        eleDom = document.querySelector(payResImgSelector1)
+        eleDom = document.querySelector(payResImgSelector)
         html2canvas(eleDom).then(async function(canvas) {
             params.b64url = canvas.toDataURL("image/png");
             await backExecRse(10, true, params)
