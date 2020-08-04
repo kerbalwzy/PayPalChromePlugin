@@ -159,38 +159,38 @@ async function run() {
 	console.log('task_step', taskInfo.task_step)
 	switch (taskInfo.task_step) {
 		case 0:
-			await step0()
+			await step0() // 进入支付主页
 			break
 		case 1:
-			await step1(taskInfo.recipient)
+			await step1(taskInfo.recipient) // 填写收款账号
 			break
 		case 2:
-			await step2()
+			await step2() // 确认收款账号
 			break
 		case 3:
-			await step3(taskInfo.amount)
+			await step3(taskInfo.amount) // 填写收款金额
 			break
 		case 4:
-			await step4(taskInfo.currency)
+			await step4(taskInfo.currency) // 选择收款币种
 			break
 		case 5:
-			await step5(taskInfo.note)
+			await step5(taskInfo.note) // 填写付款备注
 			break
 		case 6:
-			await step6()
+			await step6() // 提交收款详情
 			break
 		case 7:
-			await step7()
+			await step7() // 检查金额比重
 			break
 		case 8:
-			await step8()
+			await step8() // 提取实付信息
 			break
-		case 9:
-			await step9()
-			break
-		case 10:
-			await step10()
-			break
+			// case 9:
+			// 	await step9()
+			// 	break
+			// case 10:
+			// 	await step10()
+			// 	break
 		default:
 			console.log('this step is still not achieved')
 			clearInterval(_TaskId)
