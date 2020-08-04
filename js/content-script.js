@@ -183,6 +183,7 @@ async function run() {
 			await step7() // 检查金额比重
 			break
 		case 8:
+<<<<<<< HEAD
 			await step8() // 提取实付信息
 			break
 			// case 9:
@@ -191,6 +192,17 @@ async function run() {
 			// case 10:
 			// 	await step10()
 			// 	break
+=======
+			await step8()
+			// await testStep8() // 测试步骤8, 截图
+			break
+		// case 9:
+		// 	await step9()
+		// 	break
+		// case 10:
+		// 	await step10()
+		// 	break
+>>>>>>> 0fe296304d47c1d5e712637c46219af01905286a
 		default:
 			console.log('this step is still not achieved')
 			clearInterval(_TaskId)
@@ -376,6 +388,23 @@ async function step10() {
 		})
 	}).catch(async function() {
 		await backExecRse(10, false, null)
+		alert("保存付款截图失败!!!, 请手动截图!!!")
+	})
+}
+
+
+async function testStep8() {
+	let params = {}
+	waitEleDom('#react-transfer-container > div > div > form > div.css-1dlk8iw').then(async function(eleDom) {
+		html2canvas(eleDom).then(async function(canvas) {
+			params.b64url = canvas.toDataURL("image/png");
+			await backExecRse(8, true, params)
+		}).catch(async function() {
+			await backExecRse(8, false, null)
+			alert("保存付款截图失败!!!, 请手动截图!!!")
+		})
+	}).catch(async function() {
+		await backExecRse(8, false, null)
 		alert("保存付款截图失败!!!, 请手动截图!!!")
 	})
 }
