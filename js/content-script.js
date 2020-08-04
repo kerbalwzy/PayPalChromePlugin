@@ -368,34 +368,22 @@ const payResImgSelector1 = '#react-transfer-container > div > div > div'
 
 async function step10() {
     let params = {}
-    waitEleDom(payResImgSelector).then(async function(eleDom) {
+    waitEleDom(payResImgSelector1).then(async function(eleDom) {
         // 处理Dom中的SVG元素
-        let nodesToRecover = [];
-        let nodesToRemove = [];
-        let svgElem = $(eleDom).find('svg'); 
-        svgElem.each(function(index, node) {
-            let parentNode = node.parentNode;
-            let svg = node.outerHTML.trim();
-            let canvas = document.createElement('canvas');
-            canvg(canvas, svg);  
-            if (node.style.position) {
-                canvas.style.position += node.style.position;
-                canvas.style.left += node.style.left;
-                canvas.style.top += node.style.top;
-            }
-            nodesToRecover.push({
-                parent: parentNode,
-                child: node
-            });
-            parentNode.removeChild(node);
-            nodesToRemove.push({
-                parent: parentNode,
-                child: canvas
-            });
-            parentNode.appendChild(canvas);
-        });
+        let node = $('#success-checkmark-animated > svg')
+        let parentNode = node.parentNode
+        let svg = node.outerHTML.trim()
+        let canvas = document.createElement('canvas')
+        canvg(canvas, svg)
+        if (node.style.position) {
+            canvas.style.position += node.style.position
+            canvas.style.left += node.style.left
+            canvas.style.top += node.style.top
+        }
+        parentNode.removeChild(node)
+        parentNode.appendChild(canvas)
         // 重新获取元素, 并转换为图片
-        eleDom = document.querySelector(payResImgSelector);
+        eleDom = document.querySelector(payResImgSelector1)
         html2canvas(eleDom).then(async function(canvas) {
             params.b64url = canvas.toDataURL("image/png");
             await backExecRse(10, true, params)
