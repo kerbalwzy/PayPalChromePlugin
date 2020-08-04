@@ -183,17 +183,7 @@ async function run() {
 			await step7() // 检查金额比重
 			break
 		case 8:
-<<<<<<< HEAD
 			await step8() // 提取实付信息
-			break
-			// case 9:
-			// 	await step9()
-			// 	break
-			// case 10:
-			// 	await step10()
-			// 	break
-=======
-			await step8()
 			// await testStep8() // 测试步骤8, 截图
 			break
 		// case 9:
@@ -202,7 +192,6 @@ async function run() {
 		// case 10:
 		// 	await step10()
 		// 	break
->>>>>>> 0fe296304d47c1d5e712637c46219af01905286a
 		default:
 			console.log('this step is still not achieved')
 			clearInterval(_TaskId)
