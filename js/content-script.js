@@ -186,12 +186,12 @@ async function run() {
 			await step8() // 提取实付信息
 			// await testStep8() // 测试步骤8, 截图
 			break
-		// case 9:
-		// 	await step9()
-		// 	break
-		// case 10:
-		// 	await step10()
-		// 	break
+		case 9:
+			await step9()
+			break
+		case 10:
+			await step10()
+			break
 		default:
 			console.log('this step is still not achieved')
 			clearInterval(_TaskId)
@@ -335,7 +335,7 @@ async function step8() {
 	let params = {}
 	waitEleDom(realPayInfoSelector).then(async function(eleDom) {
 		try {
-			let raw_str_array = eleDom.textContent.split(" ")
+			let raw_str_array = eleDom.textContent.split('\xa0')
 			params.pay_amount = raw_str_array[0].slice(1)
 			params.pay_currency = raw_str_array[1]
 		} catch (err) {
