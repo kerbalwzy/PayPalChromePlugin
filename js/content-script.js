@@ -363,22 +363,27 @@ async function step9() {
 }
 
 // 付款结果截图
+const payResImgSvg = '#success-checkmark-animated > svg'
 const payResImgSelector = '#react-transfer-container > div > div > div > div._vq73ew'
-const payResImgSelector1 = '#react-transfer-container > div > div > div'
 
 async function step10() {
+    let handledSvgOk = true
+    // 使用await保证先处理好SVG
+    await waitEleDom(payResImgSvg).then(async function(eleDom) {
+        eleDom.setAttribute("width", eleDom.getBoundingClientRect().width);
+        eleDom.style.width = null;
+        eleDom.setAttribute("height", eleDom.getBoundingClientRect().height);
+        eleDom.style.height = null;
+    }).catch(function() {
+        handledSvgOk = false
+    })
+    if (!handledSvgOk) {
+        await backExecRse(10, false, null)
+        alert("处理SVG图片出错, 保存付款截图失败!!!, 请手动截图!!!")
+        return
+    }
     let params = {}
     waitEleDom(payResImgSelector).then(async function(eleDom) {
-        // 处理Dom中的SVG元素, 重置宽高
-        var svgElements = document.body.querySelectorAll('svg');
-        svgElements.forEach(function(item) {
-            item.setAttribute("width", item.getBoundingClientRect().width);
-            item.style.width = null;
-            item.setAttribute("height", item.getBoundingClientRect().height);
-            item.style.height = null;
-        });
-        // 重新获取元素, 并转换为图片
-        eleDom = document.querySelector(payResImgSelector)
         html2canvas(eleDom).then(async function(canvas) {
             params.b64url = canvas.toDataURL("image/png");
             await backExecRse(10, true, params)
@@ -409,3 +414,6 @@ async function testStep8() {
         alert("保存付款截图失败!!!, 请手动截图!!!")
     })
 }
+
+
+step10()
