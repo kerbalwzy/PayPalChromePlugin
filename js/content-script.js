@@ -72,7 +72,7 @@ function active() {
     }
 }
 
-// active()
+active()
 
 function deactivate() {
     console.log('deactivate and clear interval')
@@ -363,27 +363,30 @@ async function step9() {
 }
 
 // 付款结果截图
-const payResImgSvg = '#success-checkmark-animated > svg'
+const payResImgSvg = '#success-checkmark-animated > svg"'
 const payResImgSelector = '#react-transfer-container > div > div > div > div._vq73ew'
 
 async function step10() {
-    let handledSvgOk = true
-    // 使用await保证先处理好SVG
-    await waitEleDom(payResImgSvg).then(async function(eleDom) {
-        eleDom.setAttribute("width", eleDom.getBoundingClientRect().width);
-        eleDom.style.width = null;
-        eleDom.setAttribute("height", eleDom.getBoundingClientRect().height);
-        eleDom.style.height = null;
-    }).catch(function() {
-        handledSvgOk = false
-    })
-    if (!handledSvgOk) {
-        await backExecRse(10, false, null)
-        alert("处理SVG图片出错, 保存付款截图失败!!!, 请手动截图!!!")
-        return
-    }
     let params = {}
     waitEleDom(payResImgSelector).then(async function(eleDom) {
+        
+        let handledSvgOk = true
+        // 使用await保证先处理好SVG
+        await waitEleDom(payResImgSvg).then(async function(svgDom) {
+            svgDom.setAttribute("width", svgDom.getBoundingClientRect().width);
+            svgDom.style.width = null;
+            svgDom.setAttribute("height", svgDom.getBoundingClientRect().height);
+            svgDom.style.height = null;
+        }).catch(function() {
+            handledSvgOk = false
+        })
+        
+        if (!handledSvgOk) {
+            await backExecRse(10, false, null)
+            alert("处理SVG图片出错, 保存付款截图失败!!!, 请手动截图!!!")
+            return
+        }
+        
         html2canvas(eleDom).then(async function(canvas) {
             params.b64url = canvas.toDataURL("image/png");
             await backExecRse(10, true, params)
@@ -415,5 +418,3 @@ async function testStep8() {
     })
 }
 
-
-step10()
