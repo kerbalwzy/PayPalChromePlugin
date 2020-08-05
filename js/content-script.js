@@ -1,7 +1,7 @@
 // 注入页面的JS
 console.log("SinRiuPayPal-HomePage支付脚本注入成功")
 
-const WaitEleTimes = 10
+const WaitEleTimes = 30
 const WaitEleInterval = 1000
 const TaskHost = 'http://127.0.0.1:5678'
 const stoppedKey = "SinRuiPluginStopped"
@@ -232,7 +232,7 @@ async function step2() {
 
 // 填写收款金额
 async function step3(_amount) {
-    _waitEleDom("#fn-recipientGetsAmount", 2, 1000).then(async function(eleDom) {
+    _waitEleDom("#fn-recipientGetsAmount", 5, 1000).then(async function(eleDom) {
         eleDom.value = _amount
         eleDomDispatchEvent(eleDom, 'input')
         await backExecRse(3, true, null)
@@ -259,7 +259,7 @@ const currencySelector =
 
 // 选择收款币种
 async function step4(_currency) {
-    _waitEleDom(currencySelector, 2, 1000).then(async function(eleDom) {
+    _waitEleDom(currencySelector, 5, 1000).then(async function(eleDom) {
         eleDom.value = _currency
         eleDomDispatchEvent(eleDom, 'change')
         await backExecRse(4, true, null)
