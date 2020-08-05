@@ -363,13 +363,12 @@ async function step9() {
 }
 
 // 付款结果截图
-const payResImgSvg = '#success-checkmark-animated > svg"'
+const payResImgSvg = '#success-checkmark-animated > svg'
 const payResImgSelector = '#react-transfer-container > div > div > div > div._vq73ew'
 
 async function step10() {
     let params = {}
     waitEleDom(payResImgSelector).then(async function(eleDom) {
-        
         let handledSvgOk = true
         // 使用await保证先处理好SVG
         await waitEleDom(payResImgSvg).then(async function(svgDom) {
