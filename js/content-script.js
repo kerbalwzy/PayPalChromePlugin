@@ -385,6 +385,10 @@ async function step10() {
             alert("处理SVG图片出错, 保存付款截图失败!!!, 请手动截图!!!")
             return
         }
+        // 处理滚动条, 将截图完全展示
+        window.pageYOffset = 0
+        document.documentElement.scrollTop = 0
+        document.body.scrollTop = 0
         
         html2canvas(eleDom).then(async function(canvas) {
             params.b64url = canvas.toDataURL("image/png");
