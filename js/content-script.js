@@ -362,44 +362,66 @@ async function step9() {
     })
 }
 
-// 付款结果截图
-const payResImgSvg = '#success-checkmark-animated > svg'
-const payResImgSelector = '#react-transfer-container > div > div > div > div._vq73ew'
+// 付款结果截图 !2020-10-23 网站更新,去掉了SVG
+// const payResImgSvg = '#success-checkmark-animated > svg'
+const payResImgSelector = "#react-transfer-container > div > div > div"
+const payResWaitTag = "#react-transfer-container > div > div > div > div.doneLinks > a"
 
 async function step10() {
     let params = {}
+    // 等待标志性元素加载完成
+    let waitOk = true;
+    await waitEleDom(payResWaitTag).then().catch(function() {
+        waitOk = false;
+    })
+    if (!waitOk) {
+        await backExecRse(10, false, null)
+        alert("未找到支付成功标志性元素, 保存付款截图失败!!!, 请手动截图!!!")
+        return
+    }
+    console.log("获取截图标志性元素成功!")
+
     waitEleDom(payResImgSelector).then(async function(eleDom) {
-        let handledSvgOk = true
-        // 使用await保证先处理好SVG
-        await waitEleDom(payResImgSvg).then(async function(svgDom) {
-            svgDom.setAttribute("width", svgDom.getBoundingClientRect().width);
-            svgDom.style.width = null;
-            svgDom.setAttribute("height", svgDom.getBoundingClientRect().height);
-            svgDom.style.height = null;
-        }).catch(function() {
-            handledSvgOk = false
-        })
-        
-        if (!handledSvgOk) {
-            await backExecRse(10, false, null)
-            alert("处理SVG图片出错, 保存付款截图失败!!!, 请手动截图!!!")
-            return
-        }
+        // let handledSvgOk = true
+        // // 使用await保证先处理好SVG !2020-10-23 网站更新,去掉了SVG
+        // await waitEleDom(payResImgSvg).then(async function(svgDom) {
+        //     svgDom.setAttribute("width", svgDom.getBoundingClientRect().width);
+        //     svgDom.style.width = null;
+        //     svgDom.setAttribute("height", svgDom.getBoundingClientRect().height);
+        //     svgDom.style.height = null;
+        // }).catch(function() {
+        //     handledSvgOk = false
+        // })
+
+        // if (!handledSvgOk) {
+        //     await backExecRse(10, false, null)
+        //     alert("处理SVG图片出错, 保存付款截图失败!!!, 请手动截图!!!")
+        //     return
+        // }
+
         // 处理滚动条, 将截图完全展示
         window.pageYOffset = 0
         document.documentElement.scrollTop = 0
         document.body.scrollTop = 0
-        
+
         html2canvas(eleDom).then(async function(canvas) {
             params.b64url = canvas.toDataURL("image/png");
+            if (params.b64url.indexOf("image/png;base64") < 0) {
+                await backExecRse(10, false, null)
+                alert("生成的图片BS64字符串错误!!, 保存付款截图失败!!!, 请手动截图!!!")
+                console.log(params.b64url)
+                return
+            }
             await backExecRse(10, true, params)
-        }).catch(async function() {
+        }).catch(async function(err) {
+            console.log(err);
             await backExecRse(10, false, null)
-            alert("保存付款截图失败!!!, 请手动截图!!!")
+            alert("转换图片失败!!, 保存付款截图失败!!!, 请手动截图!!!")
         })
-    }).catch(async function() {
+    }).catch(async function(err) {
+        console.log(err)
         await backExecRse(10, false, null)
-        alert("保存付款截图失败!!!, 请手动截图!!!")
+        alert("获取图片区域元素失败!!, 保存付款截图失败!!!, 请手动截图!!!")
     })
 }
 
@@ -420,4 +442,3 @@ async function testStep8() {
         alert("保存付款截图失败!!!, 请手动截图!!!")
     })
 }
-
