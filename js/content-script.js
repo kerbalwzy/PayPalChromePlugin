@@ -16,6 +16,7 @@ function openUrl(page_url) {
     }
 }
 
+// 等待某个元素加载完成, 再执行任务
 function _waitEleDom(selector, times, interval) {
     StepDoing = true
     // selector: JS选择器
@@ -44,6 +45,39 @@ function _waitEleDom(selector, times, interval) {
 
 function waitEleDom(selector) {
     return _waitEleDom(selector, WaitEleTimes, WaitEleInterval)
+}
+
+function waitAnyEleDom(selectorArray, times, interval) {
+    /**
+     *@desc 等待任意个元素中的某个元素加载完成
+     *@param {array} selectorArray JS选择器列表
+     *@param {int} times 重试次数
+     *@param {int} interval 重试时间间隔 
+     */
+    StepDoing = true
+    let _times = times || -1,
+        _interval = interval || 500,
+        _iIntervalID // 定时器ID
+
+    return new Promise(function(resolve, reject) {
+        _iIntervalID = setInterval(function() {
+            if (!_times) {
+                clearInterval(_iIntervalID)
+                reject(new Error('元素获取超时'))
+            }
+            _times <= 0 || _times-- //如果是正数就 --
+            for (let i = 0; i < selectorArray.length; i++) {
+                let _selector = selectorArray[i]
+                let _eleDom = document.querySelector(_selector)
+                if (_eleDom !== null) {
+                    clearInterval(_iIntervalID)
+                    resolve(_eleDom)
+                    return
+                }
+            }
+
+        }, _interval)
+    })
 }
 
 function eleDomDispatchEvent(eleDom, eventName) {
@@ -168,10 +202,10 @@ async function run() {
             await step2() // 确认收款账号
             break
         case 3:
-            await step3(taskInfo.amount) // 填写收款金额
+            await step3Plus(taskInfo.amount) // 填写收款金额
             break
         case 4:
-            await step4(taskInfo.currency) // 选择收款币种
+            await step4Plus(taskInfo.currency) // 选择收款币种
             break
         case 5:
             await step5(taskInfo.note) // 填写付款备注
@@ -184,13 +218,12 @@ async function run() {
             break
         case 8:
             await step8() // 提取实付信息
-            // await testStep8() // 测试步骤8, 截图
             break
         case 9:
-            await step9()
+            await step9() // 点击支付按钮
             break
         case 10:
-            await step10()
+            await step10() // 支付结果截图
             break
         default:
             console.log('this step is still not achieved')
@@ -203,7 +236,6 @@ async function step0() {
     await backExecRse(0, true, null)
     openUrl('https://www.paypal.com/myaccount/transfer/homepage')
 }
-
 
 
 // 填写收款账号并点击确认
@@ -254,8 +286,23 @@ async function step3Back(_amount) {
     })
 }
 
+// 优化级步骤3, 尝试同时获取多个Dom对象中的任意一个
+async function step3Plus(_amount) {
+    waitAnyEleDom(['#fn-recipientGetsAmount', '#fn-amount'], WaitEleTimes, WaitEleInterval).then(async function(
+        eleDom) {
+        eleDom.value = _amount
+        eleDomDispatchEvent(eleDom, 'input')
+        await backExecRse(3, true, null)
+    }).catch(async function() {
+        console.log('step3Plus step fail')
+        await backExecRse(3, false, null)
+    })
+}
+
 const currencySelector =
     "#react-transfer-container > div > div > form > div > div:nth-child(2) > div.css-nenkzu > div.css-vljigy > div > div.ppaf-select-wrapper > select"
+const currencySelectorBack =
+    "#react-transfer-container > div > div > form > div > div:nth-child(2) > div.pp-amount-field.basic-v2-big-font > div.ppaf-select-wrapper > select"
 
 // 选择收款币种
 async function step4(_currency) {
@@ -269,8 +316,7 @@ async function step4(_currency) {
     })
 }
 
-const currencySelectorBack =
-    "#react-transfer-container > div > div > form > div > div:nth-child(2) > div.pp-amount-field.basic-v2-big-font > div.ppaf-select-wrapper > select"
+
 
 // 备选步骤4
 async function step4back(_currency) {
@@ -280,6 +326,20 @@ async function step4back(_currency) {
         await backExecRse(4, true, null)
     }).catch(async function() {
         console.log('step4 back way alse fail')
+        await backExecRse(4, false, null)
+    })
+}
+
+// 优化级步骤4
+async function step4Plus(_currency) {
+    waitAnyEleDom(
+        [currencySelector, currencySelectorBack], WaitEleTimes, WaitEleInterval
+    ).then(async function(eleDom) {
+        eleDom.value = _currency
+        eleDomDispatchEvent(eleDom, 'change')
+        await backExecRse(4, true, null)
+    }).catch(async function() {
+        console.log('step4Plus alse fail')
         await backExecRse(4, false, null)
     })
 }
@@ -422,23 +482,5 @@ async function step10() {
         console.log(err)
         await backExecRse(10, false, null)
         alert("获取图片区域元素失败!!, 保存付款截图失败!!!, 请手动截图!!!")
-    })
-}
-
-
-
-async function testStep8() {
-    let params = {}
-    waitEleDom('#react-transfer-container > div > div > form > div.css-1dlk8iw').then(async function(eleDom) {
-        html2canvas(eleDom).then(async function(canvas) {
-            params.b64url = canvas.toDataURL("image/png");
-            await backExecRse(8, true, params)
-        }).catch(async function() {
-            await backExecRse(8, false, null)
-            alert("保存付款截图失败!!!, 请手动截图!!!")
-        })
-    }).catch(async function() {
-        await backExecRse(8, false, null)
-        alert("保存付款截图失败!!!, 请手动截图!!!")
     })
 }
