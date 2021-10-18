@@ -88,6 +88,12 @@ function eleDomDispatchEvent(eleDom, eventName) {
     eleDom.dispatchEvent(_ev)
 }
 
+function sleep(time) {
+    // time: 睡眠时间, 毫秒(ms)
+    var startTime = new Date().getTime() + parseInt(time, 10);
+    while (new Date().getTime() < startTime) {}
+}
+
 var _TaskId = null
 
 function active() {
@@ -140,7 +146,7 @@ async function getTaskInfo() {
 }
 
 // 返回执行步骤结果
-async function backExecRse(_step, _ok, data) {
+async function backExecRse(_step, _ok, data, callback) {
     let taskId = sessionStorage.getItem(taskIdKey)
     let params = {
         task_id: parseInt(taskId),
@@ -152,13 +158,13 @@ async function backExecRse(_step, _ok, data) {
     $.ajax({
         url: TaskHost + '/auto_pay/resp',
         type: 'PUT',
-        // async: false,
         data: JSON.stringify(params),
         dataType: 'json',
         contentType: 'application/json',
         success: function(resp) {
             if (resp.errcode === 0) {
                 // console.log("back exec res resp:", resp)
+                return callback ? callback() : null
             } else {
                 deactivate()
                 alert(resp.msg)
@@ -202,10 +208,11 @@ async function run() {
             await step2() // 确认收款账号
             break
         case 3:
-            await step3Plus(taskInfo.amount) // 填写收款金额
+            await step3Plus(taskInfo.currency) // 选择收款币种
             break
         case 4:
-            await step4Plus(taskInfo.currency) // 选择收款币种
+            sleep(1500) // 强制睡眠1.5s
+            await step4Plus(taskInfo.amount) // 填写收款金额
             break
         case 5:
             await step5(taskInfo.note) // 填写付款备注
@@ -217,7 +224,7 @@ async function run() {
             await step7() // 检查金额比重
             break
         case 8:
-            await step8() // 提取实付信息
+            await step8(taskInfo.currency, taskInfo.amount) // 提取实付信息, 当收款币种与实付币种不一样时还要检查汇率换算值
             break
         case 9:
             await step9() // 点击支付按钮
@@ -249,8 +256,7 @@ async function step1(_account) {
     })
 }
 
-const submitAccountBtnSelector =
-    "#react-transfer-container > div > div > div > div.css-1s5wvjt > div > div > form > div.css-xcma15 > div > span.recipient-next > button"
+const submitAccountBtnSelector = 'button[data-nemo="submit"]'
 
 // 提交收款账号
 async function step2() {
@@ -262,84 +268,83 @@ async function step2() {
     })
 }
 
-// 填写收款金额
-async function step3(_amount) {
-    _waitEleDom("#fn-recipientGetsAmount", 5, 1000).then(async function(eleDom) {
-        eleDom.value = _amount
-        eleDomDispatchEvent(eleDom, 'input')
-        await backExecRse(3, true, null)
-    }).catch(async function() {
-        console.log("step3 into back way")
-        await step3Back(_amount)
-    })
-}
-
-// 备选步骤3
-async function step3Back(_amount) {
-    waitEleDom('#fn-amount').then(async function(eleDom) {
-        eleDom.value = _amount
-        eleDomDispatchEvent(eleDom, 'input')
-        await backExecRse(3, true, null)
-    }).catch(async function() {
-        console.log('step3 back way also fail')
-        await backExecRse(3, false, null)
-    })
-}
-
-// 优化级步骤3, 尝试同时获取多个Dom对象中的任意一个
-async function step3Plus(_amount) {
-    waitAnyEleDom(['#fn-recipientGetsAmount', '#fn-amount'], WaitEleTimes, WaitEleInterval).then(async function(
-        eleDom) {
-        eleDom.value = _amount
-        eleDomDispatchEvent(eleDom, 'input')
-        await backExecRse(3, true, null)
-    }).catch(async function() {
-        console.log('step3Plus step fail')
-        await backExecRse(3, false, null)
-    })
-}
-
+// 交换步骤 3/4 , 强制先选择币种, 再填写金额
 const currencySelector =
     "#react-transfer-container > div > div > form > div > div:nth-child(2) > div.css-nenkzu > div.css-vljigy > div > div.ppaf-select-wrapper > select"
 const currencySelectorBack =
     "#react-transfer-container > div > div > form > div > div:nth-child(2) > div.pp-amount-field.basic-v2-big-font > div.ppaf-select-wrapper > select"
 
 // 选择收款币种
-async function step4(_currency) {
+async function step3(_currency) {
     _waitEleDom(currencySelector, 5, 1000).then(async function(eleDom) {
         eleDom.value = _currency
         eleDomDispatchEvent(eleDom, 'change')
-        await backExecRse(4, true, null)
+        await backExecRse(3, true, null)
     }).catch(async function() {
-        console.log('step4 into back way')
+        console.log('step3 into back way')
         await step4back(_currency)
     })
 }
 
-
-
-// 备选步骤4
-async function step4back(_currency) {
+// 备选步骤3
+async function step3back(_currency) {
     waitEleDom(currencySelectorBack).then(async function(eleDom) {
         eleDom.value = _currency
         eleDomDispatchEvent(eleDom, 'change')
-        await backExecRse(4, true, null)
+        await backExecRse(3, true, null)
     }).catch(async function() {
-        console.log('step4 back way alse fail')
-        await backExecRse(4, false, null)
+        console.log('step3 back way alse fail')
+        await backExecRse(3, false, null)
     })
 }
 
-// 优化级步骤4
-async function step4Plus(_currency) {
+// 优化级步骤3
+async function step3Plus(_currency) {
     waitAnyEleDom(
         [currencySelector, currencySelectorBack], WaitEleTimes, WaitEleInterval
     ).then(async function(eleDom) {
         eleDom.value = _currency
         eleDomDispatchEvent(eleDom, 'change')
+        await backExecRse(3, true, null)
+    }).catch(async function() {
+        console.log('step3Plus alse fail')
+        await backExecRse(3, false, null)
+    })
+}
+
+// 填写收款金额
+async function step4(_amount) {
+    _waitEleDom("#fn-recipientGetsAmount", 5, 1000).then(async function(eleDom) {
+        eleDom.value = _amount
+        eleDomDispatchEvent(eleDom, 'input')
         await backExecRse(4, true, null)
     }).catch(async function() {
-        console.log('step4Plus alse fail')
+        console.log("step4 into back way")
+        await step3Back(_amount)
+    })
+}
+
+// 备选步骤4
+async function step4Back(_amount) {
+    waitEleDom('#fn-amount').then(async function(eleDom) {
+        eleDom.value = _amount
+        eleDomDispatchEvent(eleDom, 'input')
+        await backExecRse(4, true, null)
+    }).catch(async function() {
+        console.log('step3 back way also fail')
+        await backExecRse(4, false, null)
+    })
+}
+
+// 优化级步骤4, 尝试同时获取多个Dom对象中的任意一个
+async function step4Plus(_amount) {
+    waitAnyEleDom(['#fn-recipientGetsAmount', '#fn-amount'], WaitEleTimes, WaitEleInterval).then(async function(
+        eleDom) {
+        eleDom.value = _amount
+        eleDomDispatchEvent(eleDom, 'input')
+        await backExecRse(4, true, null)
+    }).catch(async function() {
+        console.log('step4Plus step fail')
         await backExecRse(4, false, null)
     })
 }
@@ -387,23 +392,40 @@ async function step7() {
     })
 }
 
-// 提取实付金额与币种
+// 提取实付金额与币种, 当收款币种与实付币种不一样时, 需要检查汇率换算的值是否在限制范围内, 目前上限设置为1个货币单位
 const realPayInfoSelector =
     '#react-transfer-container > div > div > form > div.preview-fundingOptions-wrapper._al5qkz > div:nth-child(2) > div > div > span > span._140n9qh.col-xs-7.totalAmount.col-xs-5.txtAlignRight.test_senderPay'
-
-async function step8() {
+const convertCurrencyRateSelector =
+    '#react-transfer-container > div > div > form > div.preview-fundingOptions-wrapper._al5qkz > div.currencyConversion.clearfix > div > div:nth-child(1) > span > span > span > span'
+async function step8(receipt_currency, receipt_amount) {
     let params = {}
     waitEleDom(realPayInfoSelector).then(async function(eleDom) {
+        let currency_rate_check = false
         try {
             let raw_str_array = eleDom.textContent.split('\xa0')
             params.pay_amount = raw_str_array[0].slice(1)
             params.pay_currency = raw_str_array[1]
+            // 当收款币种与实付币种不一样时, 需要检查汇率换算的值是否在限制范围内, 目前上限设置为1个货币单位
+            if (receipt_currency != params.pay_currency) {
+                currency_rate_check = true
+                await waitEleDom(convertCurrencyRateSelector).then(async function(currencyRateDom) {
+                    let rate = currencyRateDom.textContent.split(' ')[0]
+                    params.currency_rate = rate
+                }).catch(async function(err) {
+                    console.log("获取汇率失败")
+                    console.log(err)
+                })
+            }
+            if (currency_rate_check && !params.currency_rate) {
+                await backExecRse(8, false, null)
+                return
+            }
+            await backExecRse(8, true, params)
         } catch (err) {
             console.log(err)
             await backExecRse(8, false, null)
             return
         }
-        await backExecRse(8, true, params)
     }).catch(async function() {
         await backExecRse(8, false, null)
     })
@@ -411,15 +433,55 @@ async function step8() {
 
 // 最终付款确认
 const finalSubmitSelector = '#react-transfer-container > div > div > form > button.css-1mggxor.vx_btn'
+const finalFormSelector = '#react-transfer-container > div > div > form'
+const finalFormAvatarSvg =
+    '#react-transfer-container > div > div > form > div.css-1dlk8iw > div.css-1uv1ykq > div.css-12m5src.recipientHeader > div > div > div > svg'
 
+// 将付款预览表单截图发送到后端, 返回成功后再点击确认支付按钮
 async function step9() {
+    let params = {}
+    // 先尝试获取最终提交表单的预览图
+    await waitEleDom(finalFormSelector).then(async function(fromDom) {
+        // 使用await保证先处理好头像
+        await waitEleDom(finalFormAvatarSvg).then(async function(svgDom) {
+            svgDom.setAttribute("width", svgDom.getBoundingClientRect().width);
+            svgDom.style.width = null;
+            svgDom.setAttribute("height", svgDom.getBoundingClientRect().height);
+            svgDom.style.height = null;
+        })
+        // 处理滚动条, 将截图完全展示
+        window.pageYOffset = 0
+        document.documentElement.scrollTop = 0
+        document.body.scrollTop = 0
+        // 将表单元素转换为图片
+        await html2canvas(fromDom).then(async function(canvas) {
+            params.b64url = canvas.toDataURL("image/png").toString();
+            if (params.b64url.indexOf("image/png;base64") < 0 || params.b64url.length <
+                50) {
+                console.log("获取最终提交表单截图失败")
+                console.log(params.b64url)
+                params.b64url = null
+                return
+            }
+            console.log("获取最终提交表单截图成功")
+        }).catch(async function(err) {
+            console.log("获取最终提交表单截图失败")
+            console.log(err);
+        })
+    })
+
+    // 向后端提交表单预览图, 本地后端返回成功后才点击确认支付按钮
     waitEleDom(finalSubmitSelector).then(async function(eleDom) {
-        await backExecRse(9, true, null)
-        eleDomDispatchEvent(eleDom, 'click')
-        eleDom.click()
+        await backExecRse(9, true, params,
+            function() {
+                eleDomDispatchEvent(eleDom, 'click')
+                eleDom.click()
+            }
+        )
     }).catch(async function() {
         await backExecRse(9, false, null)
     })
+
 }
 
 // 付款结果截图 !2020-10-23 网站更新,去掉了SVG
@@ -466,7 +528,8 @@ async function step10() {
 
         html2canvas(eleDom).then(async function(canvas) {
             params.b64url = canvas.toDataURL("image/png");
-            if (params.b64url.indexOf("image/png;base64") < 0) {
+            if (params.b64url.indexOf("image/png;base64") < 0 || params.b64url.length <
+                50) {
                 await backExecRse(10, false, null)
                 alert("生成的图片BS64字符串错误!!, 保存付款截图失败!!!, 请手动截图!!!")
                 console.log(params.b64url)
